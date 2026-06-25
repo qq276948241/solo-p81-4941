@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import type { Plant } from '@/types';
 import { getItem, setItem } from '@/utils/storage';
 import { usePlants } from './usePlants';
@@ -8,34 +8,27 @@ const STORAGE_KEY = 'plant_exchange_favorites';
 const favoriteIds = ref<string[]>([]);
 const isLoaded = ref(false);
 
+function loadFromStorage() {
+  if (isLoaded.value) return;
+  const stored = getItem<string[]>(STORAGE_KEY);
+  favoriteIds.value = stored || [];
+  isLoaded.value = true;
+}
+
+loadFromStorage();
+
 export function useFavorites() {
   const { getPlantById } = usePlants();
-
-  const load = () => {
-    const stored = getItem<string[]>(STORAGE_KEY);
-    if (stored) {
-      favoriteIds.value = stored;
-    }
-    isLoaded.value = true;
-  };
 
   const save = () => {
     setItem(STORAGE_KEY, favoriteIds.value);
   };
 
-  const ensureLoaded = () => {
-    if (!isLoaded.value) {
-      load();
-    }
-  };
-
   const isFavorited = (plantId: string): boolean => {
-    ensureLoaded();
     return favoriteIds.value.includes(plantId);
   };
 
   const toggleFavorite = (plantId: string) => {
-    ensureLoaded();
     const index = favoriteIds.value.indexOf(plantId);
     if (index > -1) {
       favoriteIds.value.splice(index, 1);
@@ -46,7 +39,6 @@ export function useFavorites() {
   };
 
   const addFavorite = (plantId: string) => {
-    ensureLoaded();
     if (!favoriteIds.value.includes(plantId)) {
       favoriteIds.value.unshift(plantId);
       save();
@@ -54,7 +46,6 @@ export function useFavorites() {
   };
 
   const removeFavorite = (plantId: string) => {
-    ensureLoaded();
     const index = favoriteIds.value.indexOf(plantId);
     if (index > -1) {
       favoriteIds.value.splice(index, 1);
@@ -63,20 +54,14 @@ export function useFavorites() {
   };
 
   const favoritedPlants = computed((): Plant[] => {
-    ensureLoaded();
     return favoriteIds.value
       .map((id) => getPlantById(id))
       .filter((p): p is Plant => p !== undefined);
   });
 
-  onMounted(() => {
-    if (!isLoaded.value) {
-      load();
-    }
-  });
-
   return {
     favoriteIds,
+    isLoaded,
     isFavorited,
     toggleFavorite,
     addFavorite,

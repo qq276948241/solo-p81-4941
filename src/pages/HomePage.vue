@@ -18,7 +18,9 @@ const emit = defineEmits<{
 
 const router = useRouter();
 const { plants, filterPlants, isLoaded, loadPlants } = usePlants();
-const { isFavorited, toggleFavorite } = useFavorites();
+const { favoriteIds, toggleFavorite } = useFavorites();
+
+const favoritedSet = computed(() => new Set(favoriteIds.value));
 
 const activeCategory = ref<PlantCategory | 'all'>('all');
 const localSearch = ref('');
@@ -52,10 +54,6 @@ const goToDetail = (plant: Plant) => {
 
 const handleToggleFavorite = (plantId: string) => {
   toggleFavorite(plantId);
-};
-
-const checkIsFavorited = (plantId: string) => {
-  return isFavorited(plantId);
 };
 
 onMounted(() => {
@@ -114,7 +112,7 @@ watch(
           v-for="plant in displayPlants"
           :key="plant.id"
           :plant="plant"
-          :is-favorited="checkIsFavorited(plant.id)"
+          :is-favorited="favoritedSet.has(plant.id)"
           @click="goToDetail(plant)"
           @toggle-favorite="handleToggleFavorite"
         />

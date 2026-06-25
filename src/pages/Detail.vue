@@ -16,6 +16,7 @@ import type { Plant } from '@/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '@/types';
 import { usePlants } from '@/composables/usePlants';
 import { useUser } from '@/composables/useUser';
+import { useFavorites } from '@/composables/useFavorites';
 import { formatDate } from '@/utils/image';
 import Modal from '@/components/Modal.vue';
 
@@ -23,12 +24,17 @@ const route = useRoute();
 const router = useRouter();
 const { getPlantById, loadPlants, isLoaded } = usePlants();
 const { isInterested, addInterest } = useUser();
+const { favoriteIds, toggleFavorite } = useFavorites();
 
 const plantId = computed(() => route.params.id as string);
 const plant = ref<Plant | null>(null);
 const currentImageIndex = ref(0);
 const showModal = ref(false);
 const isAdded = ref(false);
+const isFavoritedAnimating = ref(false);
+
+const favoritedSet = computed(() => new Set(favoriteIds.value));
+const isFavorited = computed(() => (plant.value ? favoritedSet.value.has(plant.value.id) : false));
 
 const plantImages = computed(() => {
   if (plant.value?.images && plant.value.images.length > 0) {
@@ -71,6 +77,15 @@ const handleWant = () => {
     isAdded.value = true;
     showModal.value = true;
   }
+};
+
+const handleToggleFavorite = () => {
+  if (!plant.value) return;
+  toggleFavorite(plant.value.id);
+  isFavoritedAnimating.value = true;
+  setTimeout(() => {
+    isFavoritedAnimating.value = false;
+  }, 400);
 };
 
 const goBack = () => {
@@ -160,6 +175,19 @@ onMounted(() => {
             <span class="text-xs font-medium">{{ categoryLabel }}</span>
           </div>
 
+          <button
+            class="absolute top-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full
+                   flex items-center justify-center shadow-soft transition-all duration-300
+                   hover:scale-110 active:scale-95"
+            :class="[
+              isFavorited ? 'text-moss-500' : 'text-gray-400 hover:text-moss-400',
+              isFavoritedAnimating ? 'animate-bounce-soft' : ''
+            ]"
+            @click="handleToggleFavorite"
+          >
+            <Heart class="w-5 h-5" :fill="isFavorited ? 'currentColor' : 'none'" />
+          </button>
+
           <div
             v-if="plantImages.length > 1"
             class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5"
@@ -233,6 +261,17 @@ onMounted(() => {
 
       <div class="sticky bottom-6 pt-4">
         <div class="flex gap-3">
+          <button
+            class="btn-secondary w-14 flex items-center justify-center"
+            :class="[
+              isFavorited ? 'bg-moss-50 border-moss-300 text-moss-500' : '',
+              isFavoritedAnimating ? 'animate-bounce-soft' : ''
+            ]"
+            :title="isFavorited ? '取消收藏' : '收藏'"
+            @click="handleToggleFavorite"
+          >
+            <Heart class="w-5 h-5" :fill="isFavorited ? 'currentColor' : 'none'" />
+          </button>
           <button
             class="btn-secondary flex-1 flex items-center justify-center gap-2"
             :class="isLiked ? 'bg-moss-50 border-moss-300 text-moss-600' : ''"
