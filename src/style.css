@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Noto Serif SC', 'ZCOOL XiaoWei', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color: #2d3748;
+  background-color: #faf7f2;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #faf7f2;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-moss-500 text-white rounded-2xl font-medium
+           transition-all duration-300 hover:bg-moss-600 hover:shadow-hover
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-rice-100 text-moss-600 rounded-2xl font-medium
+           border-2 border-moss-200 transition-all duration-300
+           hover:bg-moss-50 hover:border-moss-300 active:scale-95;
+  }
+
+  .btn-outline {
+    @apply px-4 py-2 border-2 border-moss-300 text-moss-600 rounded-xl
+           font-medium transition-all duration-300 hover:bg-moss-50
+           hover:border-moss-400;
+  }
+
+  .card {
+    @apply bg-white rounded-3xl shadow-card overflow-hidden
+           transition-all duration-300 hover:shadow-hover hover:-translate-y-1;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-rice-50 border-2 border-rice-200 rounded-xl
+           text-gray-700 placeholder-gray-400 font-hand
+           focus:outline-none focus:border-moss-300 focus:bg-white
+           transition-all duration-300;
+  }
+
+  .textarea-field {
+    @apply w-full px-4 py-3 bg-rice-50 border-2 border-rice-200 rounded-xl
+           text-gray-700 placeholder-gray-400 font-hand resize-none
+           focus:outline-none focus:border-moss-300 focus:bg-white
+           transition-all duration-300;
+  }
+
+  .tag {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm
+           font-medium transition-all duration-300;
+  }
+
+  .tag-active {
+    @apply bg-moss-500 text-white shadow-soft;
+  }
+
+  .tag-inactive {
+    @apply bg-rice-100 text-moss-600 border border-moss-100
+           hover:bg-moss-50 cursor-pointer;
+  }
+
+  .washi-tape {
+    @apply absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2
+           w-16 h-6 bg-amber-100/80 rotate-[-2deg]
+           shadow-[0_2px_4px_rgba(0,0,0,0.1)];
+  }
+
+  .washi-tape-alt {
+    @apply absolute top-0 right-4 -translate-y-2
+           w-12 h-5 bg-rose-100/80 rotate-[3deg]
+           shadow-[0_2px_4px_rgba(0,0,0,0.1)];
+  }
+}
+
+@layer utilities {
+  .masonry-grid {
+    column-count: 4;
+    column-gap: 1rem;
+  }
+
+  @media (max-width: 1280px) {
+    .masonry-grid {
+      column-count: 3;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .masonry-grid {
+      column-count: 2;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .masonry-grid {
+      column-count: 1;
+    }
+  }
+
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
