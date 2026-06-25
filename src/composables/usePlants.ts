@@ -86,11 +86,6 @@ const MOCK_PLANTS: Omit<Plant, 'id' | 'userId' | 'createdAt'>[] = [
 const plants = ref<Plant[]>([]);
 const isLoaded = ref(false);
 
-const favoriteIds = ref<string[]>([]);
-const favLoaded = ref(false);
-
-const FAVORITES_KEY = 'plant_exchange_favorites';
-
 export function usePlants() {
   const userId = getOrCreateUserId();
 
@@ -178,61 +173,9 @@ export function usePlants() {
       .sort((a, b) => b.createdAt - a.createdAt);
   });
 
-  const loadFavorites = () => {
-    const stored = getItem<string[]>(FAVORITES_KEY);
-    if (stored) {
-      favoriteIds.value = stored;
-    }
-    favLoaded.value = true;
-  };
-
-  const saveFavorites = () => {
-    setItem(FAVORITES_KEY, favoriteIds.value);
-  };
-
-  const isFavorited = (plantId: string) => {
-    if (!favLoaded.value) {
-      loadFavorites();
-    }
-    return favoriteIds.value.includes(plantId);
-  };
-
-  const toggleFavorite = (plantId: string) => {
-    if (!favLoaded.value) {
-      loadFavorites();
-    }
-    const index = favoriteIds.value.indexOf(plantId);
-    if (index > -1) {
-      favoriteIds.value.splice(index, 1);
-    } else {
-      favoriteIds.value.unshift(plantId);
-    }
-    saveFavorites();
-  };
-
-  const removeFavorite = (plantId: string) => {
-    const index = favoriteIds.value.indexOf(plantId);
-    if (index > -1) {
-      favoriteIds.value.splice(index, 1);
-      saveFavorites();
-    }
-  };
-
-  const getFavoritedPlants = computed(() => {
-    if (!favLoaded.value) {
-      loadFavorites();
-    }
-    return favoriteIds.value
-      .map((id) => getPlantById(id))
-      .filter((p): p is Plant => p !== undefined);
-  });
-
   onMounted(() => {
     if (!isLoaded.value) {
       loadPlants();
-    }
-    if (!favLoaded.value) {
-      loadFavorites();
     }
   });
 
@@ -246,10 +189,5 @@ export function usePlants() {
     deletePlant,
     getMyPublished,
     userId,
-    favoriteIds,
-    isFavorited,
-    toggleFavorite,
-    removeFavorite,
-    getFavoritedPlants,
   };
 }

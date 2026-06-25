@@ -1,23 +1,22 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { MapPin, Clock, Heart } from 'lucide-vue-next';
 import type { Plant } from '@/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '@/types';
 import { formatDate } from '@/utils/image';
-import { usePlants } from '@/composables/usePlants';
 
 const props = defineProps<{
   plant: Plant;
+  isFavorited?: boolean;
   showActions?: boolean;
+  showDelete?: boolean;
 }>();
 
 const emit = defineEmits<{
-  delete: [id: string];
+  click: [plant: Plant];
+  'toggle-favorite': [plantId: string];
+  delete: [plantId: string];
 }>();
-
-const router = useRouter();
-const { isFavorited, toggleFavorite } = usePlants();
 
 const justToggled = ref(false);
 
@@ -37,22 +36,21 @@ const plantImage = computed(() => {
 const categoryLabel = computed(() => CATEGORY_LABELS[props.plant.category]);
 const categoryIcon = computed(() => CATEGORY_ICONS[props.plant.category]);
 const timeAgo = computed(() => formatDate(props.plant.createdAt));
-const isFav = computed(() => isFavorited(props.plant.id));
 
-const goToDetail = () => {
-  router.push(`/detail/${props.plant.id}`);
+const handleCardClick = () => {
+  emit('click', props.plant);
 };
 
-const handleFav = (e: Event) => {
+const handleFavoriteClick = (e: Event) => {
   e.stopPropagation();
-  toggleFavorite(props.plant.id);
+  emit('toggle-favorite', props.plant.id);
   justToggled.value = true;
   setTimeout(() => {
     justToggled.value = false;
   }, 400);
 };
 
-const handleDelete = (e: Event) => {
+const handleDeleteClick = (e: Event) => {
   e.stopPropagation();
   emit('delete', props.plant.id);
 };
@@ -61,7 +59,7 @@ const handleDelete = (e: Event) => {
 <template>
   <div
     class="card masonry-item cursor-pointer relative group animate-fade-in"
-    @click="goToDetail"
+    @click="handleCardClick"
   >
     <div class="washi-tape" v-if="Math.random() > 0.5"></div>
     <div class="washi-tape-alt" v-else></div>
@@ -87,12 +85,12 @@ const handleDelete = (e: Event) => {
                flex items-center justify-center shadow-soft transition-all duration-300
                hover:scale-110 active:scale-95"
         :class="[
-          isFav ? 'text-moss-500' : 'text-gray-400 hover:text-moss-400',
+          isFavorited ? 'text-moss-500' : 'text-gray-400 hover:text-moss-400',
           justToggled ? 'animate-bounce-soft' : ''
         ]"
-        @click="handleFav"
+        @click="handleFavoriteClick"
       >
-        <Heart class="w-4 h-4" :fill="isFav ? 'currentColor' : 'none'" />
+        <Heart class="w-4 h-4" :fill="isFavorited ? 'currentColor' : 'none'" />
       </button>
     </div>
 
@@ -122,10 +120,10 @@ const handleDelete = (e: Event) => {
       </div>
 
       <button
-        v-if="showActions === false"
+        v-if="showDelete"
         class="mt-3 w-full py-2 bg-rose-50 text-rose-500 rounded-xl text-sm font-hand
                border border-rose-100 transition-all duration-300 hover:bg-rose-100"
-        @click="handleDelete"
+        @click="handleDeleteClick"
       >
         撤销发布
       </button>

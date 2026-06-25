@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { Sprout, Leaf, Flower2, Wrench, Sparkles } from 'lucide-vue-next';
-import type { PlantCategory } from '@/types';
+import { useRouter } from 'vue-router';
+import { Sprout, Leaf, Sparkles } from 'lucide-vue-next';
+import type { PlantCategory, Plant } from '@/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '@/types';
 import { usePlants } from '@/composables/usePlants';
+import { useFavorites } from '@/composables/useFavorites';
 import PlantCard from '@/components/PlantCard.vue';
 
 const props = defineProps<{
@@ -14,17 +16,19 @@ const emit = defineEmits<{
   search: [query: string];
 }>();
 
+const router = useRouter();
 const { plants, filterPlants, isLoaded, loadPlants } = usePlants();
+const { isFavorited, toggleFavorite } = useFavorites();
 
 const activeCategory = ref<PlantCategory | 'all'>('all');
 const localSearch = ref('');
 
-const categories: { value: PlantCategory | 'all'; label: string; icon: string }[] = [
-  { value: 'all', label: '全部', icon: '🌿' },
-  { value: 'succulent', label: CATEGORY_LABELS.succulent, icon: CATEGORY_ICONS.succulent },
-  { value: 'green', label: CATEGORY_LABELS.green, icon: CATEGORY_ICONS.green },
-  { value: 'flower', label: CATEGORY_LABELS.flower, icon: CATEGORY_ICONS.flower },
-  { value: 'tool', label: CATEGORY_LABELS.tool, icon: CATEGORY_ICONS.tool },
+const categories = [
+  { value: 'all' as const, label: '全部', icon: '🌿' },
+  { value: 'succulent' as const, label: CATEGORY_LABELS.succulent, icon: CATEGORY_ICONS.succulent },
+  { value: 'green' as const, label: CATEGORY_LABELS.green, icon: CATEGORY_ICONS.green },
+  { value: 'flower' as const, label: CATEGORY_LABELS.flower, icon: CATEGORY_ICONS.flower },
+  { value: 'tool' as const, label: CATEGORY_LABELS.tool, icon: CATEGORY_ICONS.tool },
 ];
 
 const displayPlants = computed(() => {
@@ -40,6 +44,18 @@ const displayPlants = computed(() => {
 
 const setCategory = (category: PlantCategory | 'all') => {
   activeCategory.value = category;
+};
+
+const goToDetail = (plant: Plant) => {
+  router.push(`/detail/${plant.id}`);
+};
+
+const handleToggleFavorite = (plantId: string) => {
+  toggleFavorite(plantId);
+};
+
+const checkIsFavorited = (plantId: string) => {
+  return isFavorited(plantId);
 };
 
 onMounted(() => {
@@ -98,6 +114,9 @@ watch(
           v-for="plant in displayPlants"
           :key="plant.id"
           :plant="plant"
+          :is-favorited="checkIsFavorited(plant.id)"
+          @click="goToDetail(plant)"
+          @toggle-favorite="handleToggleFavorite"
         />
       </div>
     </div>
