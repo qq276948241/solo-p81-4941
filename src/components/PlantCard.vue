@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { MapPin, Clock, Heart } from 'lucide-vue-next';
 import type { Plant } from '@/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '@/types';
 import { formatDate } from '@/utils/image';
-import { useUser } from '@/composables/useUser';
+import { usePlants } from '@/composables/usePlants';
 
 const props = defineProps<{
   plant: Plant;
@@ -17,7 +17,9 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
-const { isInterested, toggleInterest } = useUser();
+const { isFavorited, toggleFavorite } = usePlants();
+
+const justToggled = ref(false);
 
 const plantImage = computed(() => {
   if (props.plant.images && props.plant.images.length > 0) {
@@ -35,15 +37,19 @@ const plantImage = computed(() => {
 const categoryLabel = computed(() => CATEGORY_LABELS[props.plant.category]);
 const categoryIcon = computed(() => CATEGORY_ICONS[props.plant.category]);
 const timeAgo = computed(() => formatDate(props.plant.createdAt));
-const isLiked = computed(() => isInterested(props.plant.id));
+const isFav = computed(() => isFavorited(props.plant.id));
 
 const goToDetail = () => {
   router.push(`/detail/${props.plant.id}`);
 };
 
-const handleLike = (e: Event) => {
+const handleFav = (e: Event) => {
   e.stopPropagation();
-  toggleInterest(props.plant.id);
+  toggleFavorite(props.plant.id);
+  justToggled.value = true;
+  setTimeout(() => {
+    justToggled.value = false;
+  }, 400);
 };
 
 const handleDelete = (e: Event) => {
@@ -80,10 +86,13 @@ const handleDelete = (e: Event) => {
         class="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full
                flex items-center justify-center shadow-soft transition-all duration-300
                hover:scale-110 active:scale-95"
-        :class="isLiked ? 'text-rose-500' : 'text-gray-400 hover:text-rose-400'"
-        @click="handleLike"
+        :class="[
+          isFav ? 'text-moss-500' : 'text-gray-400 hover:text-moss-400',
+          justToggled ? 'animate-bounce-soft' : ''
+        ]"
+        @click="handleFav"
       >
-        <Heart class="w-4 h-4" :fill="isLiked ? 'currentColor' : 'none'" />
+        <Heart class="w-4 h-4" :fill="isFav ? 'currentColor' : 'none'" />
       </button>
     </div>
 

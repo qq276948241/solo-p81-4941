@@ -1,23 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { Leaf, Heart, Trash2, PlusCircle, Sprout } from 'lucide-vue-next';
+import { Leaf, Heart, Trash2, PlusCircle, Sprout, Bookmark } from 'lucide-vue-next';
 import { usePlants } from '@/composables/usePlants';
 import { useUser } from '@/composables/useUser';
 import PlantCard from '@/components/PlantCard.vue';
 import Modal from '@/components/Modal.vue';
 
 const router = useRouter();
-const { getMyPublished, deletePlant, loadPlants, isLoaded } = usePlants();
+const { getMyPublished, deletePlant, loadPlants, isLoaded, getFavoritedPlants, removeFavorite } = usePlants();
 const { getInterestedPlants, removeInterest } = useUser();
 
-const activeTab = ref<'published' | 'interested'>('published');
+const activeTab = ref<'published' | 'interested' | 'favorited'>('published');
 const showDeleteModal = ref(false);
 const deleteTargetId = ref('');
-const deleteType = ref<'published' | 'interested'>('published');
+const deleteType = ref<'published' | 'interested' | 'favorited'>('published');
 
 const publishedPlants = computed(() => getMyPublished.value);
 const interestedPlants = computed(() => getInterestedPlants.value);
+const favoritedPlants = computed(() => getFavoritedPlants.value);
 
 const handleDeletePublished = (id: string) => {
   deleteTargetId.value = id;
@@ -32,11 +33,20 @@ const handleDeleteInterested = (id: string, e: Event) => {
   showDeleteModal.value = true;
 };
 
+const handleDeleteFavorited = (id: string, e: Event) => {
+  e.stopPropagation();
+  deleteTargetId.value = id;
+  deleteType.value = 'favorited';
+  showDeleteModal.value = true;
+};
+
 const confirmDelete = () => {
   if (deleteType.value === 'published') {
     deletePlant(deleteTargetId.value);
-  } else {
+  } else if (deleteType.value === 'interested') {
     removeInterest(deleteTargetId.value);
+  } else {
+    removeFavorite(deleteTargetId.value);
   }
   showDeleteModal.value = false;
 };
@@ -111,9 +121,29 @@ onMounted(() => {
             {{ interestedPlants.length }}
           </span>
         </button>
+        <button
+          class="flex items-center gap-2 px-6 py-2.5 rounded-xl font-hand transition-all duration-300"
+          :class="
+            activeTab === 'favorited'
+              ? 'bg-white text-moss-600 shadow-soft'
+              : 'text-gray-500 hover:text-moss-500'
+          "
+          @click="activeTab = 'favorited'"
+        >
+          <Bookmark class="w-4 h-4" />
+          <span>我收藏的</span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full"
+            :class="
+              activeTab === 'favorited' ? 'bg-moss-100 text-moss-600' : 'bg-rice-200 text-gray-500'
+            "
+          >
+            {{ favoritedPlants.length }}
+          </span>
+        </button>
       </div>
 
-      <div class="hidden md:grid md:grid-cols-2 md:gap-6">
+      <div class="hidden md:grid md:grid-cols-3 md:gap-6">
         <div>
           <h2 class="text-lg font-semibold text-gray-800 font-hand mb-4 flex items-center gap-2">
             <div class="w-8 h-8 bg-moss-100 rounded-xl flex items-center justify-center">
@@ -243,6 +273,70 @@ onMounted(() => {
             </div>
           </div>
         </div>
+
+        <div class="md:border-l md:border-rice-200 md:pl-6">
+          <h2 class="text-lg font-semibold text-gray-800 font-hand mb-4 flex items-center gap-2">
+            <div class="w-8 h-8 bg-moss-100 rounded-xl flex items-center justify-center">
+              <Bookmark class="w-4 h-4 text-moss-500" />
+            </div>
+            我收藏的
+            <span class="text-sm text-gray-400 font-normal">({{ favoritedPlants.length }})</span>
+          </h2>
+
+          <div v-if="favoritedPlants.length === 0" class="text-center py-12 bg-white rounded-3xl">
+            <div class="w-20 h-20 mx-auto mb-4 bg-rice-100 rounded-full flex items-center justify-center">
+              <Bookmark class="w-10 h-10 text-rice-300" />
+            </div>
+            <p class="text-gray-400 font-hand mb-2">还没有收藏过植物</p>
+            <p class="text-gray-300 font-hand text-sm">点卡片上的爱心试试~</p>
+          </div>
+
+          <div v-else class="space-y-4">
+            <div
+              v-for="plant in favoritedPlants"
+              :key="plant.id"
+              class="card overflow-hidden animate-fade-in"
+            >
+              <div class="flex gap-4 p-4">
+                <div
+                  class="w-24 h-24 flex-shrink-0 rounded-2xl overflow-hidden bg-rice-100 cursor-pointer"
+                  @click="$router.push(`/detail/${plant.id}`)"
+                >
+                  <img
+                    v-if="plant.images?.length"
+                    :src="plant.images[0]"
+                    :alt="plant.name"
+                    class="w-full h-full object-cover"
+                  />
+                  <div v-else class="w-full h-full bg-rice-100 flex items-center justify-center">
+                    <Leaf class="w-8 h-8 text-rice-300" />
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3
+                    class="font-semibold text-gray-800 font-hand line-clamp-1 cursor-pointer hover:text-moss-600 transition-colors"
+                    @click="$router.push(`/detail/${plant.id}`)"
+                  >
+                    {{ plant.name }}
+                  </h3>
+                  <p class="text-sm text-gray-500 font-hand line-clamp-1 mb-2">
+                    {{ plant.variety }}
+                  </p>
+                  <p class="text-xs text-moss-500 font-hand line-clamp-1 mb-3">
+                    📍 {{ plant.community }}
+                  </p>
+                  <button
+                    class="text-sm text-gray-400 font-hand flex items-center gap-1 hover:text-moss-500 transition-colors"
+                    @click="handleDeleteFavorited(plant.id, $event)"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                    取消收藏
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="md:hidden">
@@ -304,7 +398,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div v-else>
+        <div v-else-if="activeTab === 'interested'">
           <div v-if="interestedPlants.length === 0" class="text-center py-12 bg-white rounded-3xl">
             <div class="w-20 h-20 mx-auto mb-4 bg-rice-100 rounded-full flex items-center justify-center">
               <Heart class="w-10 h-10 text-rice-300" />
@@ -359,16 +453,72 @@ onMounted(() => {
             </div>
           </div>
         </div>
+
+        <div v-else>
+          <div v-if="favoritedPlants.length === 0" class="text-center py-12 bg-white rounded-3xl">
+            <div class="w-20 h-20 mx-auto mb-4 bg-rice-100 rounded-full flex items-center justify-center">
+              <Bookmark class="w-10 h-10 text-rice-300" />
+            </div>
+            <p class="text-gray-400 font-hand mb-2">还没有收藏过植物</p>
+            <p class="text-gray-300 font-hand text-sm">点卡片上的爱心试试~</p>
+          </div>
+
+          <div v-else class="space-y-4">
+            <div
+              v-for="plant in favoritedPlants"
+              :key="plant.id"
+              class="card overflow-hidden animate-fade-in"
+            >
+              <div class="flex gap-4 p-4">
+                <div
+                  class="w-24 h-24 flex-shrink-0 rounded-2xl overflow-hidden bg-rice-100 cursor-pointer"
+                  @click="$router.push(`/detail/${plant.id}`)"
+                >
+                  <img
+                    v-if="plant.images?.length"
+                    :src="plant.images[0]"
+                    :alt="plant.name"
+                    class="w-full h-full object-cover"
+                  />
+                  <div v-else class="w-full h-full bg-rice-100 flex items-center justify-center">
+                    <Leaf class="w-8 h-8 text-rice-300" />
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3
+                    class="font-semibold text-gray-800 font-hand line-clamp-1 cursor-pointer hover:text-moss-600 transition-colors"
+                    @click="$router.push(`/detail/${plant.id}`)"
+                  >
+                    {{ plant.name }}
+                  </h3>
+                  <p class="text-sm text-gray-500 font-hand line-clamp-1 mb-2">
+                    {{ plant.variety }}
+                  </p>
+                  <p class="text-xs text-moss-500 font-hand line-clamp-1 mb-3">
+                    📍 {{ plant.community }}
+                  </p>
+                  <button
+                    class="text-sm text-gray-400 font-hand flex items-center gap-1 hover:text-moss-500 transition-colors"
+                    @click="handleDeleteFavorited(plant.id, $event)"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                    取消收藏
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <Modal v-model:show="showDeleteModal" :title="deleteType === 'published' ? '确认撤销发布' : '确认取消想要'">
+    <Modal v-model:show="showDeleteModal" :title="deleteType === 'published' ? '确认撤销发布' : deleteType === 'interested' ? '确认取消想要' : '确认取消收藏'">
       <div class="text-center py-4">
         <div class="w-16 h-16 mx-auto mb-4 bg-rose-100 rounded-full flex items-center justify-center">
           <Trash2 class="w-8 h-8 text-rose-500" />
         </div>
         <p class="text-gray-600 font-hand">
-          {{ deleteType === 'published' ? '确定要撤销发布这株植物吗？' : '确定要取消想要这株植物吗？' }}
+          {{ deleteType === 'published' ? '确定要撤销发布这株植物吗？' : deleteType === 'interested' ? '确定要取消想要这株植物吗？' : '确定要取消收藏这株植物吗？' }}
         </p>
         <p class="text-gray-400 font-hand text-sm mt-1">
           {{ deleteType === 'published' ? '撤销后将从列表中移除' : '取消后可以重新添加' }}
